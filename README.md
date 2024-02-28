@@ -37,7 +37,7 @@ Optionally, you can specify the IDs of the licensing, security, and quality poli
 ### Things to note
 
 This checks if an existing release group of the same release group name exists. It'll exit if there exists a release group of the same name. This only creates a new release group. Modifiying existing release groups depends on how you want to structure your data, as it comprises of multiple parts to create the payload.
-Please see the original docuemtnation of this here: https://docs.fossa.com/docs/modifying-release-groups
+Please see the original documentation of this here: https://docs.fossa.com/docs/modifying-release-groups
 
 ### Support
 For more features, please open up an Issue and/or contact chelsea@fossa.com.
