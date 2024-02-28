@@ -76,7 +76,7 @@ def list_release_groups(api_key):
 
     headers = {"Authorization": f"Bearer {api_key}"}
     release_groups_list = []
-    print("List of policies:")
+    print("List of release groups:")
     print("{:<40} {:<20}".format("Release group name", "Release group ID"))
     while url:
         response = requests.get(url, headers=headers)
