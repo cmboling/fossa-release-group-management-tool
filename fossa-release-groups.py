@@ -92,6 +92,10 @@ def list_release_groups(api_key):
                     release_group_info = {"name": group['title'], "id": group['id']}
                     release_groups_list.append(release_group_info)
                     print("{:<40} {:<20}".format(group['title'], group['id']))
+
+                    # Fetch and print details of releases for this release group
+                    fetch_and_print_release_details(api_key, group['id'])
+                    print("-----------------")
             else:
                 print("No release groups found.")
                 break
@@ -108,11 +112,38 @@ def list_release_groups(api_key):
             break
     return release_groups_list
 
+def fetch_and_print_release_details(api_key, release_group_id):
+    url = f"{FOSSA_API_BASE_URL}/project_group/{release_group_id}"
+
+    headers = {"Authorization": f"Bearer {api_key}"}
+    response = requests.get(url, headers=headers)
+
+    if response.status_code == 200:
+        data = response.json()
+        releases = data.get("releases", [])
+
+        if not releases:
+            print(f"No releases found for release group ID {release_group_id}.")
+            return
+
+        print("Release group versions:")
+        for release in releases:
+            print(f"Release ID: {release['id']}")
+            print(f"Title: {release['title']}")
+            # print("Projects:")
+            # for project in release.get('projects', []):
+            #     print(f"- Project ID: {project['projectId']}")
+            #     print(f"  Branch: {project['branch']}")
+            #     print(f"  Revision ID: {project['revisionId']}")
+            print()  # Empty line for separation
+    else:
+        print(f"Failed to fetch release details for release group ID {release_group_id}: {response.text}")
+
 def release_group_exists(api_key, release_group_name):
     release_groups = list_release_groups(api_key)
     for group in release_groups:
         if group['name'] == release_group_name:
-            print(f"Release group '{release_group_name}' already exists with ID: {group['id']}.")
+            print(f"Release group '{release_group_name}' already exists with Release Group ID: {group['id']}.")
             return True
     return False
 
