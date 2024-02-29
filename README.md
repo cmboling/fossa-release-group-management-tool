@@ -37,7 +37,7 @@ python fossa-release-groups.py list --type <resource_type> --fossa-api-key <your
 
 You can list `projects`, `teams`, `release-groups`, and `policies` which are necessary to understand in your FOSSA organization prior to creating a new Release Group.
 
-### Adding a new release group
+### Create a new release group
 
 To add a new release group, use the following command:
 
