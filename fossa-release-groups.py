@@ -94,8 +94,15 @@ def list_release_groups(api_key):
                     print("{:<40} {:<20}".format(group['title'], group['id']))
 
                     # Fetch and print details of releases for this release group
-                    fetch_and_print_release_details(api_key, group['id'])
+                    release_details = fetch_release_details(api_key, group['id'])
+                    release_groups_list[-1]["releases"] = release_details  # Add releases to the last item in the list
+
+                    print("Release details:")
+                    for release in release_details:
+                        print(f"\t Release ID: {release['id']}")
+                        print(f"\t Release Title: {release['title']}")
                     print("-----------------")
+
             else:
                 print("No release groups found.")
                 break
@@ -110,9 +117,11 @@ def list_release_groups(api_key):
         else:
             print(f"Failed to list release groups: {response.text}")
             break
+
+    print(release_groups_list)
     return release_groups_list
 
-def fetch_and_print_release_details(api_key, release_group_id):
+def fetch_release_details(api_key, release_group_id):
     url = f"{FOSSA_API_BASE_URL}/project_group/{release_group_id}"
 
     headers = {"Authorization": f"Bearer {api_key}"}
@@ -124,20 +133,17 @@ def fetch_and_print_release_details(api_key, release_group_id):
 
         if not releases:
             print(f"No releases found for release group ID {release_group_id}.")
-            return
+            return []
 
-        print("Release group versions:")
+        release_details = []
         for release in releases:
-            print(f"Release ID: {release['id']}")
-            print(f"Title: {release['title']}")
-            # print("Projects:")
-            # for project in release.get('projects', []):
-            #     print(f"- Project ID: {project['projectId']}")
-            #     print(f"  Branch: {project['branch']}")
-            #     print(f"  Revision ID: {project['revisionId']}")
-            print()  # Empty line for separation
+            release_info = {"id": release['id'], "title": release['title']}
+            release_details.append(release_info)
+
+        return release_details
     else:
         print(f"Failed to fetch release details for release group ID {release_group_id}: {response.text}")
+        return []
 
 def release_group_exists(api_key, release_group_name):
     release_groups = list_release_groups(api_key)
