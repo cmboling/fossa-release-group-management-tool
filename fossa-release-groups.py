@@ -28,19 +28,22 @@ def run_fossa_analyze(api_key):
 def run_fossa_test(api_key):
     subprocess.run(["fossa", "test", "--fossa-api-key", api_key])
 
-def list_projects(api_key):
+def list_projects(api_key, suppress_output=False):
     url = f"{FOSSA_API_BASE_URL}/projects"
     headers = {"Authorization": f"Bearer {api_key}"}
     response = requests.get(url, headers=headers)
     if response.status_code == 200:
         projects = sorted(response.json(), key=lambda x: x['title'])
-        print("List of projects:")
-        print("{:<40} {:<20}".format("Project Name", "Project Locator"))
-        for project in projects:
-            print("{:<40} {:<20}".format(project['title'], project['locator']))
+        if not suppress_output:
+            print("List of projects:")
+            print("{:<40} {:<20}".format("Project Name", "Project Locator"))
+            for project in projects:
+                print("{:<40} {:<20}".format(project['title'], project['locator']))
+        return projects
     else:
         print(f"Failed to list projects: {response.text}")
-    return projects
+        return []
+
 
 def list_teams(api_key):
     url = f"{FOSSA_API_BASE_URL}/teams"
@@ -160,11 +163,12 @@ def release_group_exists(api_key, release_group_name, release_group_version):
                 # should never return this case
                 print(f"Release group '{release_group_name}' already exists with Release Group ID: {group['id']} but has no versions.")
                 return False
+    print(f"Release group '{release_group_name}' doesn't exist.")
     return False
 
 def create_new_release_group(api_key, release_group_name, release_group_version, licensing_policy_id=None, security_policy_id=None, quality_policy_id=None, teams=None):
     # Check if the test project exists
-    projects = list_projects(api_key)
+    projects = list_projects(api_key, suppress_output=True)
     test_project = next((project for project in projects if project["title"] == "test-project-for-release-group-creation"), None)
 
     if test_project:
@@ -177,7 +181,7 @@ def create_new_release_group(api_key, release_group_name, release_group_version,
         run_fossa_test(api_key)
 
         # Retrieve the project ID again after setup actions
-        projects = list_projects(api_key)
+        projects = list_projects(api_key, suppress_output=True)
         test_project = next((project for project in projects if project["title"] == "test-project-for-release-group-creation"), None)
 
         if not test_project:
@@ -219,7 +223,7 @@ def create_new_release_group(api_key, release_group_name, release_group_version,
 
 def add_test_project_to_existing_release_group(api_key, release_group_id, release_group_version):
     # Check if the test project exists
-    projects = list_projects(api_key)
+    projects = list_projects(api_key, suppress_output=True)
     test_project = next((project for project in projects if project["title"] == "test-project-for-release-group-creation"), None)
 
     if test_project:
@@ -232,7 +236,7 @@ def add_test_project_to_existing_release_group(api_key, release_group_id, releas
         run_fossa_test(api_key)
 
         # Retrieve the project ID again after setup actions
-        projects = list_projects(api_key)
+        projects = list_projects(api_key, suppress_output=True)
         test_project = next((project for project in projects if project["title"] == "test-project-for-release-group-creation"), None)
 
         if not test_project:
@@ -278,7 +282,7 @@ if __name__ == "__main__":
 
     if args.command == "list":
         if args.type == "projects":
-            list_projects(args.fossa_api_key)
+            list_projects(args.fossa_api_key, suppress_output=False)
         elif args.type == "teams":
             list_teams(args.fossa_api_key)
         elif args.type == "policies":
