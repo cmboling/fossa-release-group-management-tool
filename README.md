@@ -53,8 +53,10 @@ Similar to creating a new release, use the same flags, and there will be logic t
 
 ### Things to note
 
-This checks if an existing release group of the same release group name and version exists. It'll exit if there exists a release group and version of the same name. This only creates the first version of a release group, as well as adding new versions. Modifiying existing release groups with additional projects (or the same projects) depends on how you want to structure your data, as it comprises of multiple parts to create the payload.
+- This checks if an existing release group of the same release group name and version exists. It'll exit if there exists a release group and version of the same name. This only creates the first version of a release group, as well as adding new versions. Modifiying existing release groups with additional projects (or the same projects) depends on how you want to structure your data, as it comprises of multiple parts to create the payload.
 Please see the original documentation of this here: https://docs.fossa.com/docs/modifying-release-groups
+
+- This script assumes title of release groups are unique (as it should be, though FOSSA doesn't check for uniqueness).
 
 ### Support
 For more features, please open up an Issue and/or contact chelsea@fossa.com.
