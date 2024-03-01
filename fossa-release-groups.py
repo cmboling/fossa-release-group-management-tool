@@ -153,7 +153,7 @@ def release_group_exists(api_key, release_group_name, release_group_version):
                 for release in group["releases"]:
                     if release["title"] == release_group_version:
                         print(f"Release group '{release_group_name}' already exists with Release Group ID: {group['id']} and has version '{release_group_version}'.")
-                        return False
+                        exit()
                 print(f"Release group '{release_group_name}' already exists with Release Group ID: {group['id']} but the specified version '{release_group_version}' does not exist.")
                 return group['id']
             else:
