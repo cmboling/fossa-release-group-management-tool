@@ -4,7 +4,7 @@ This tool helps create release groups.
 
 ## How this works
 
-When release groups are created in the UI, FOSSA needs at least one project to create a release group. Furthermore, the branch and revision specified must have been scanned. This is important to note due to how the APIs used in this script work. This script runs analysis on a simple python project that has a blank requirements.txt file. This means while the analysis is successful, there are no dependencies to report. This project then gets added to a new release group, creating the first version of the release group. From here, the `list` command can be used to verify that the release group has been created. To automatically add projects to the new release group, you can use the release group flags from the `fossa analyze` command:
+When release groups are created in the UI, FOSSA needs at least one project to create a release group. Furthermore, the branch and revision specified must have been scanned. This is important to note due to how the APIs used in this script work. This script runs analysis on a simple python project that has a blank requirements.txt file. This means while the analysis is successful, there are no dependencies to report. This project then gets added to a release group version. From here, the `list` command can be used to verify that the release group has been created. To automatically add legitimate projects to a release group, you can use the release group flags from the `fossa analyze` command:
 
 ```
 fossa analyze --help | grep release
