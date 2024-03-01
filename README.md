@@ -47,9 +47,13 @@ python fossa-release-groups.py add --release-group-name <group_name> --release-g
 
 Optionally, you can specify the IDs of the licensing, security, and quality policies using `--licensing-policy-id`, `--security-policy-id`, and `--quality-policy-id` respectively. You can also specify team IDs using `--teams`.
 
+### Add a new version to a release group
+
+Similar to creating a new release, use the same flags, and there will be logic to check if the specified release group version exists or not. If it doesn't exist, then the new release group version will be created. This will also check if the test project exists in your org; if it doesn't then the script will create and scan project, then add it to the new release group version.
+
 ### Things to note
 
-This checks if an existing release group of the same release group name exists. It'll exit if there exists a release group of the same name. This only creates the first version of a release group. Modifiying existing release groups depends on how you want to structure your data, as it comprises of multiple parts to create the payload.
+This checks if an existing release group of the same release group name and version exists. It'll exit if there exists a release group and version of the same name. This only creates the first version of a release group, as well as adding new versions. Modifiying existing release groups with additional projects (or the same projects) depends on how you want to structure your data, as it comprises of multiple parts to create the payload.
 Please see the original documentation of this here: https://docs.fossa.com/docs/modifying-release-groups
 
 ### Support
