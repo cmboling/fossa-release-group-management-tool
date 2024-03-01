@@ -118,7 +118,6 @@ def list_release_groups(api_key):
             print(f"Failed to list release groups: {response.text}")
             break
 
-    print(release_groups_list)
     return release_groups_list
 
 def fetch_release_details(api_key, release_group_id):
@@ -145,34 +144,60 @@ def fetch_release_details(api_key, release_group_id):
         print(f"Failed to fetch release details for release group ID {release_group_id}: {response.text}")
         return []
 
-def release_group_exists(api_key, release_group_name):
+def release_group_exists(api_key, release_group_name, release_group_version):
     release_groups = list_release_groups(api_key)
     for group in release_groups:
         if group['name'] == release_group_name:
-            print(f"Release group '{release_group_name}' already exists with Release Group ID: {group['id']}.")
-            return True
+            # Check if the release group has any versions
+            if "releases" in group and group["releases"]:
+                for release in group["releases"]:
+                    if release["title"] == release_group_version:
+                        print(f"Release group '{release_group_name}' already exists with Release Group ID: {group['id']} and has version '{release_group_version}'.")
+                        return False
+                print(f"Release group '{release_group_name}' already exists with Release Group ID: {group['id']} but the specified version '{release_group_version}' does not exist.")
+                return group['id']
+            else:
+                # should never return this case
+                print(f"Release group '{release_group_name}' already exists with Release Group ID: {group['id']} but has no versions.")
+                return False
     return False
 
-def create_release_group(api_key, release_group_name, release_group_version, licensing_policy_id=None, security_policy_id=None, quality_policy_id=None, teams=None):
-    # Find the project ID for the test project
+def create_new_release_group(api_key, release_group_name, release_group_version, licensing_policy_id=None, security_policy_id=None, quality_policy_id=None, teams=None):
+    # Check if the test project exists
     projects = list_projects(api_key)
     test_project = next((project for project in projects if project["title"] == "test-project-for-release-group-creation"), None)
-    if not test_project:
-        print("Error: Test project not found.")
-        return
 
-    test_project_id = test_project["locator"]
+    if test_project:
+        test_project_id = test_project["locator"]
+    else:
+        # Perform necessary setup actions if the test project doesn't exist
+        create_test_directory()
+        create_blank_requirements_file()
+        run_fossa_analyze(api_key)
+        run_fossa_test(api_key)
+
+        # Retrieve the project ID again after setup actions
+        projects = list_projects(api_key)
+        test_project = next((project for project in projects if project["title"] == "test-project-for-release-group-creation"), None)
+
+        if not test_project:
+            print("Error: Test project not found.")
+            return
+
+        test_project_id = test_project["locator"]
 
     url = f"{FOSSA_API_BASE_URL}/project_group"
     headers = {"Authorization": f"Bearer {api_key}"}
     payload = {
         "title": release_group_name,
         "release": {
-            "projects": [{
-                "projectId": test_project_id,
-                "branch": "test-branch",
-                "revisionId": test_project_id + "$test-revision"
-            }],
+            "projects": [
+                {
+                    "projectId": test_project_id,
+                    "branch": "test-branch",
+                    "revisionId": test_project_id + "$test-revision"
+                }
+            ],
             "title": release_group_version
         }
     }
@@ -191,6 +216,52 @@ def create_release_group(api_key, release_group_name, release_group_version, lic
         print("Release group created successfully.")
     else:
         print(f"Failed to create release group: {response.text}")
+
+def add_test_project_to_existing_release_group(api_key, release_group_id, release_group_version):
+    # Check if the test project exists
+    projects = list_projects(api_key)
+    test_project = next((project for project in projects if project["title"] == "test-project-for-release-group-creation"), None)
+
+    if test_project:
+        test_project_id = test_project["locator"]
+    else:
+        # Perform necessary setup actions if the test project doesn't exist
+        create_test_directory()
+        create_blank_requirements_file()
+        run_fossa_analyze(api_key)
+        run_fossa_test(api_key)
+
+        # Retrieve the project ID again after setup actions
+        projects = list_projects(api_key)
+        test_project = next((project for project in projects if project["title"] == "test-project-for-release-group-creation"), None)
+
+        if not test_project:
+            print("Error: Test project not found.")
+            return
+
+        test_project_id = test_project["locator"]
+
+    url = f"{FOSSA_API_BASE_URL}/project_group/{release_group_id}/release"
+    headers = {"Authorization": f"Bearer {api_key}"}
+    payload = {
+        "title": release_group_version,
+        "projects": [
+            {
+                "projectId": test_project_id,
+                "branch": "test-branch",
+                "revisionId": test_project_id + "$test-revision"
+            }
+        ],
+        "projectsToDelete":[]
+    }
+
+    response = requests.post(url, headers=headers, json=payload)
+
+    if response.status_code == 200:
+        print("Project added to release group successfully.")
+    else:
+        print(f"Failed to add project to release group: {response.text}")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Manage FOSSA projects, teams, and policies.")
@@ -221,10 +292,8 @@ if __name__ == "__main__":
             print("Both release group name and release group version are required for the 'add' command.")
         else:
             if check_fossa_existence():
-                if release_group_exists(args.fossa_api_key, args.release_group_name):
-                    exit()
-                create_test_directory()
-                create_blank_requirements_file()
-                run_fossa_analyze(args.fossa_api_key)
-                run_fossa_test(args.fossa_api_key)
-                create_release_group(args.fossa_api_key, args.release_group_name, args.release_group_version, args.licensing_policy_id, args.security_policy_id, args.quality_policy_id, args.teams)
+                release_group_id = release_group_exists(args.fossa_api_key, args.release_group_name, args.release_group_version)
+                if release_group_id:
+                    add_test_project_to_existing_release_group(args.fossa_api_key, release_group_id, args.release_group_version)
+                else:
+                    create_new_release_group(args.fossa_api_key, args.release_group_name, args.release_group_version, args.licensing_policy_id, args.security_policy_id, args.quality_policy_id, args.teams)
