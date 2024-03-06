@@ -21,7 +21,7 @@ Ensure that FOSSA is installed and accessible on your system.
 
 ## Setup
 
-1. Obtain a FOSSA API key.
+1. Obtain a FOSSA full API access key.
 2. Run the tool with the `list` command to verify that FOSSA is accessible and to list existing resources.
 3. Run `chmod +x fossa-release-groups.py`
 
