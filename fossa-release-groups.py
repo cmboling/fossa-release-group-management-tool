@@ -71,7 +71,7 @@ def list_policies(api_key):
     else:
         print(f"Failed to list policies: {response.text}")
 
-def list_release_groups(api_key):
+def list_release_groups(api_key, list_release_projects=False):
     page = 1
     count = 20
     sort = "latest-scan_desc"
@@ -92,18 +92,24 @@ def list_release_groups(api_key):
             if "releaseGroups" in data:
                 release_groups = data["releaseGroups"]
                 for group in release_groups:
-                    release_group_info = {"name": group['title'], "id": group['id']}
+                    release_group_info = {"name": group['title'], "id": group['id'], "projects": group["projects"]}
                     release_groups_list.append(release_group_info)
                     print("{:<40} {:<20}".format(group['title'], group['id']))
 
                     # Fetch and print details of releases for this release group
-                    release_details = fetch_release_details(api_key, group['id'])
+                    release_details = fetch_release_details(api_key, group['id'], list_release_projects)
                     release_groups_list[-1]["releases"] = release_details  # Add releases to the last item in the list
 
                     print("Release details:")
                     for release in release_details:
                         print(f"\t Release ID: {release['id']}")
                         print(f"\t Release Title: {release['title']}")
+
+                        if list_release_projects:
+                            for project in release["projects"]:
+                                print(f"\t\t\t Project Id: {project['projectId']}")
+                                print(f"\t\t\t Project Branch: {project['branch']}")
+                                print(f"\t\t\t Project Revision: {project['revisionId']}\n")
                     print("-----------------")
 
             else:
@@ -120,10 +126,10 @@ def list_release_groups(api_key):
         else:
             print(f"Failed to list release groups: {response.text}")
             break
-
+    print(release_groups_list)
     return release_groups_list
 
-def fetch_release_details(api_key, release_group_id):
+def fetch_release_details(api_key, release_group_id, list_release_projects=False):
     url = f"{FOSSA_API_BASE_URL}/project_group/{release_group_id}"
 
     headers = {"Authorization": f"Bearer {api_key}"}
@@ -139,7 +145,8 @@ def fetch_release_details(api_key, release_group_id):
 
         release_details = []
         for release in releases:
-            release_info = {"id": release['id'], "title": release['title']}
+            #print(release)
+            release_info = {"id": release['id'], "title": release['title'], "projects": release['projects']}
             release_details.append(release_info)
 
         return release_details
@@ -273,6 +280,7 @@ if __name__ == "__main__":
     parser.add_argument("--type", choices=["projects", "teams", "policies", "release-groups"], help="Type of resource to list")
     parser.add_argument("--release-group-name", help="Name of the release group")
     parser.add_argument("--release-group-version", help="Version of the release group")
+    parser.add_argument("--release-projects", action="store_true", help="Projects of a particular release group version")
     parser.add_argument("--licensing-policy-id", help="ID of the licensing policy")
     parser.add_argument("--security-policy-id", help="ID of the security policy")
     parser.add_argument("--quality-policy-id", help="ID of the quality policy")
@@ -288,7 +296,7 @@ if __name__ == "__main__":
         elif args.type == "policies":
             list_policies(args.fossa_api_key)
         elif args.type == "release-groups":
-            list_release_groups(args.fossa_api_key)
+            list_release_groups(args.fossa_api_key, args.release_projects)
         else:
             print("Please specify a valid type (--type projects/teams/policies/release_groups) to list.")
     elif args.command == "add":
