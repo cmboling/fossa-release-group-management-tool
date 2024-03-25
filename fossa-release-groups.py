@@ -274,12 +274,63 @@ def add_test_project_to_existing_release_group(api_key, release_group_id, releas
         print(f"Failed to add project to release group: {response.text}")
 
 
+def copy_projects_between_release_groups(api_key, release_group_name_src, release_group_name_dest, release_group_version):
+    # Check if both release groups exist and have the same version
+    release_groups = list_release_groups(api_key)
+
+    src_version_exists=False
+    dest_version_exists=False
+
+    for release in release_groups:
+        if release["name"] == release_group_name_src:
+            if "releases" in release:
+                for release_group_version in release["releases"]:
+                    if release_group_version["title"] == release_group_version:
+                        projects_to_copy = release_group_version["projects"]
+                        print("Source release version exists + projects copied")
+                        src_version_exists=True
+                        break
+
+    for release in release_groups:
+        if release["name"] == release_group_name_dest:
+            if "releases" in release:
+                for release_group_version in release["releases"]:
+                    if release_group_version["title"] == release_group_version:
+                        destinationId = release_group_version["releaseId"]
+                        print("Destination release version exists")
+                        dest_version_exists=True
+                        destination_version_releaseId
+                        break
+
+    if not src_version_exists and not dest_version_exists:
+        print(f"Doesn't exist in parallel release groups '{release_group_name_src}' + '{release_group_name_dest}' with version '{release_group_version}'.")
+        return
+
+        # Add projects to destination release group version
+        url = f"{FOSSA_API_BASE_URL}/project_group/{release_group_id_dest}/release"
+        headers = {"Authorization": f"Bearer {api_key}"}
+        payload = {
+            "title": release_group_version,
+            "projects": projects_to_copy,
+            "projectsToDelete": []
+        }
+
+        response = requests.put(url, headers=headers, json=payload)
+
+        if response.status_code == 200:
+            print("Projects copied successfully from release group '{0}' to release group '{1}' with version '{2}'.".format(release_group_name_src, release_group_name_dest, release_group_version))
+        else:
+            print(f"Failed to copy projects to release group '{release_group_name_dest}': {response.text}")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Manage FOSSA projects, teams, and policies.")
-    parser.add_argument("command", choices=["list", "add"], help="Command to execute")
+    parser.add_argument("command", choices=["list", "add", "copy"], help="Command to execute")
     parser.add_argument("--type", choices=["projects", "teams", "policies", "release-groups"], help="Type of resource to list")
     parser.add_argument("--release-group-name", help="Name of the release group")
     parser.add_argument("--release-group-version", help="Version of the release group")
+    parser.add_argument("--release-group-name-src", help="Name of the source release group for copying projects")
+    parser.add_argument("--release-group-name-dest", help="Name of the destination release group for copying projects")
     parser.add_argument("--release-projects", action="store_true", help="Projects of a particular release group version")
     parser.add_argument("--licensing-policy-id", help="ID of the licensing policy")
     parser.add_argument("--security-policy-id", help="ID of the security policy")
@@ -309,3 +360,9 @@ if __name__ == "__main__":
                     add_test_project_to_existing_release_group(args.fossa_api_key, release_group_id, args.release_group_version)
                 else:
                     create_new_release_group(args.fossa_api_key, args.release_group_name, args.release_group_version, args.licensing_policy_id, args.security_policy_id, args.quality_policy_id, args.teams)
+    elif args.command == "copy":
+        if not args.release_group_name_src or not args.release_group_name_dest or not args.release_group_version:
+            print("Both source release group name, destination release group name, and release group version are required for the 'copy' command.")
+        else:
+            if check_fossa_existence():
+                copy_projects_between_release_groups(args.fossa_api_key, args.release_group_name_src, args.release_group_name_dest, args.release_group_version)
