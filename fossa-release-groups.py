@@ -278,49 +278,53 @@ def copy_projects_between_release_groups(api_key, release_group_name_src, releas
     # Check if both release groups exist and have the same version
     release_groups = list_release_groups(api_key)
 
-    src_version_exists=False
-    dest_version_exists=False
+    src_version_exists = False
+    dest_version_exists = False
 
     for release in release_groups:
+        print('this is release in release groups')
+        print(release)
         if release["name"] == release_group_name_src:
             if "releases" in release:
-                for release_group_version in release["releases"]:
-                    if release_group_version["title"] == release_group_version:
-                        projects_to_copy = release_group_version["projects"]
+                for release_group in release["releases"]:
+                    if release_group["title"] == release_group_version:
+                        projects_to_copy = release_group["projects"]
                         print("Source release version exists + projects copied")
-                        src_version_exists=True
+                        src_version_exists = True
                         break
 
     for release in release_groups:
         if release["name"] == release_group_name_dest:
+            release_group_destination_id = release["id"]
             if "releases" in release:
-                for release_group_version in release["releases"]:
-                    if release_group_version["title"] == release_group_version:
-                        destinationId = release_group_version["releaseId"]
+                for release_group in release["releases"]:
+                    if release_group["title"] == release_group_version:
+                        release_group_version_destination_id = release_group["id"]
                         print("Destination release version exists")
-                        dest_version_exists=True
-                        destination_version_releaseId
+                        dest_version_exists = True
                         break
 
     if not src_version_exists and not dest_version_exists:
         print(f"Doesn't exist in parallel release groups '{release_group_name_src}' + '{release_group_name_dest}' with version '{release_group_version}'.")
         return
 
-        # Add projects to destination release group version
-        url = f"{FOSSA_API_BASE_URL}/project_group/{release_group_id_dest}/release"
-        headers = {"Authorization": f"Bearer {api_key}"}
-        payload = {
-            "title": release_group_version,
-            "projects": projects_to_copy,
-            "projectsToDelete": []
-        }
+    # Add projects to destination release group version
+    url = f"{FOSSA_API_BASE_URL}/project_group/{release_group_destination_id}/release/{release_group_version_destination_id}"
+    headers = {"Authorization": f"Bearer {api_key}"}
+    payload = {
+        "title": release_group_version,
+        "projects": projects_to_copy,
+        "projectsToDelete": []
+    }
 
-        response = requests.put(url, headers=headers, json=payload)
+    response = requests.put(url, headers=headers, json=payload)
+    print('what is response')
+    print(response)
 
-        if response.status_code == 200:
-            print("Projects copied successfully from release group '{0}' to release group '{1}' with version '{2}'.".format(release_group_name_src, release_group_name_dest, release_group_version))
-        else:
-            print(f"Failed to copy projects to release group '{release_group_name_dest}': {response.text}")
+    if response.status_code == 200:
+        print("Projects copied successfully from release group '{0}' to release group '{1}' with version '{2}'.".format(release_group_name_src, release_group_name_dest, release_group_version))
+    else:
+        print(f"Failed to copy projects to release group '{release_group_name_dest}': {response.text}")
 
 
 if __name__ == "__main__":
