@@ -282,8 +282,6 @@ def copy_projects_between_release_groups(api_key, release_group_name_src, releas
     dest_version_exists = False
 
     for release in release_groups:
-        print('this is release in release groups')
-        print(release)
         if release["name"] == release_group_name_src:
             if "releases" in release:
                 for release_group in release["releases"]:
@@ -292,6 +290,16 @@ def copy_projects_between_release_groups(api_key, release_group_name_src, releas
                         print("Source release version exists + projects copied")
                         src_version_exists = True
                         break
+
+    # Format projects_to_copy to match the payload structure
+    formatted_projects = []
+    for project in projects_to_copy:
+        formatted_project = {
+            "projectId": project["projectId"],
+            "branch": project["branch"],
+            "revisionId": project["revisionId"]
+        }
+        formatted_projects.append(formatted_project)
 
     for release in release_groups:
         if release["name"] == release_group_name_dest:
@@ -313,19 +321,16 @@ def copy_projects_between_release_groups(api_key, release_group_name_src, releas
     headers = {"Authorization": f"Bearer {api_key}"}
     payload = {
         "title": release_group_version,
-        "projects": projects_to_copy,
+        "projects": formatted_projects,
         "projectsToDelete": []
     }
 
     response = requests.put(url, headers=headers, json=payload)
-    print('what is response')
-    print(response)
 
     if response.status_code == 200:
         print("Projects copied successfully from release group '{0}' to release group '{1}' with version '{2}'.".format(release_group_name_src, release_group_name_dest, release_group_version))
     else:
         print(f"Failed to copy projects to release group '{release_group_name_dest}': {response.text}")
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Manage FOSSA projects, teams, and policies.")
