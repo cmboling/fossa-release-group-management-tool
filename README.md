@@ -47,6 +47,15 @@ python fossa-release-groups.py add --release-group-name <group_name> --release-g
 
 Optionally, you can specify the IDs of the licensing, security, and quality policies using `--licensing-policy-id`, `--security-policy-id`, and `--quality-policy-id` respectively. You can also specify team IDs using `--teams`.
 
+
+### Copy one release group version to another
+
+To copy projects from one release group version to another release group version, use the following command:
+
+```
+python fossa-release-groups.py copy --release-group-name-src release-group-a --release-group-name-dest release-group-c --release-group-version "1.0" --fossa-api-key <fossa-api-key>
+```
+
 ### Add a new version to a release group
 
 Similar to creating a new release, use the same flags, and there will be logic to check if the specified release group version exists or not. If it doesn't exist, then the new release group version will be created. This will also check if the test project exists in your org; if it doesn't then the script will create and scan project, then add it to the new release group version.
